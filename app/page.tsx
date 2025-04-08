@@ -322,7 +322,7 @@ export default function ChessballGame() {
           />
 
           <div className="flex flex-row items-start justify-center gap-8 relative">
-            <div className="w-[600px] flex justify-center">
+            <div className="w-[550px] flex justify-center">
               <GameBoard
                 gameState={gameState}
                 selectedPlayer={selectedPlayer}

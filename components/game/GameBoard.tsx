@@ -44,8 +44,8 @@ export default function GameBoard({
 
     // Base style for all cells
     const baseStyle: CSSProperties = {
-      width: "60px",
-      height: "60px",
+      width: "55px",
+      height: "55px",
       display: "flex",
       justifyContent: "center",
       alignItems: "center",
@@ -53,7 +53,7 @@ export default function GameBoard({
       cursor: "pointer",
       overflow: "hidden",
       border: "1px solid black",
-      backgroundSize: "30px 30px",
+      backgroundSize: "27.5px 27.5px",
     };
 
     // Special style for goal areas
