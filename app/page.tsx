@@ -130,8 +130,8 @@ export default function ChessballGame() {
 
     const cell = gameState.grid[row][col];
 
-    // If no player is selected and the cell contains a player of the current team
-    if (!selectedPlayer && cell && cell.team === currentTeam) {
+    // If clicking on a player of the current team and we're in move mode
+    if (cell && cell.team === currentTeam && actionMode === "move") {
       // Skip player's turn if they were tackled in the previous turn
       if (
         skippedPlayer &&
@@ -142,7 +142,9 @@ export default function ChessballGame() {
         return;
       }
 
+      // If clicking on a different player of the same team, automatically reselect
       setSelectedPlayer({ row, col });
+      setActionMode("move"); // Reset to default move action
       return;
     }
 

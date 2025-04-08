@@ -55,6 +55,11 @@ export const initialPositions = {
       position: [3, 6] as [number, number],
       isGoalkeeper: false,
     },
+    {
+      type: "player",
+      position: [4, 4] as [number, number],
+      isGoalkeeper: false,
+    },
   ],
   team2: [
     {
@@ -80,6 +85,11 @@ export const initialPositions = {
     {
       type: "player",
       position: [6, 6] as [number, number],
+      isGoalkeeper: false,
+    },
+    {
+      type: "player",
+      position: [5, 4] as [number, number],
       isGoalkeeper: false,
     },
   ],
