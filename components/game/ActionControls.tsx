@@ -62,14 +62,6 @@ export default function ActionControls({
         >
           Throw Ball
         </Button>
-        <Button
-          variant="outline"
-          onClick={() => setSelectedPlayer(null)}
-          className="w-full"
-          disabled={!selectedPlayer}
-        >
-          Cancel
-        </Button>
       </div>
     </div>
   );
