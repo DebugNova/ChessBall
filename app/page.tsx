@@ -18,6 +18,7 @@ import {
   initializeGame,
   GameState,
   SelectedPlayer,
+  Player,
 } from "@/app/utils/gameUtils";
 import {
   calculateValidMoves,
@@ -172,16 +173,16 @@ export default function ChessballGame() {
         // Normal move - just place our player
         newGrid[row][col] = {
           ...player,
-          position: [row, col],
+          position: [row, col] as [number, number],
         };
 
         // Update ball position if the player had the ball or if this is a tackle
         let newBallPosition = [...gameState.ballPosition] as [number, number];
         if (hasBall(gameState, srcRow, srcCol)) {
-          newBallPosition = [row, col];
+          newBallPosition = [row, col] as [number, number];
         } else if (isTackle && hasBall(gameState, row, col)) {
           // In a tackle, if opponent had the ball, we take it
-          newBallPosition = [row, col];
+          newBallPosition = [row, col] as [number, number];
 
           // Mark the tackled player so they skip their next turn
           setSkippedPlayer([row, col]);
@@ -216,9 +217,8 @@ export default function ChessballGame() {
 
         // If this was a tackle, give player an extra move
         if (isTackle && hasBall(gameState, row, col)) {
-          // Extra move is handled by not switching teams
-          // But we still reset selection to allow player to choose another piece
-          setSelectedPlayer(null);
+          // Set the tackling player as selected for the next move
+          setSelectedPlayer({ row, col });
           setActionMode("move");
           return; // Don't switch teams yet, player gets another turn
         }

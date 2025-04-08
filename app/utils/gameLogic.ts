@@ -54,6 +54,25 @@ const calculateMoveSquares = (
   const GRID_SIZE = 10;
   const moves: number[][] = [];
 
+  // Check if we can tackle an opponent with ball
+  const [ballRow, ballCol] = gameState.ballPosition;
+  const ballOwner = gameState.grid[ballRow][ballCol];
+
+  if (ballOwner && ballOwner.team !== player.team) {
+    // Check if we can tackle diagonally forward
+    const rowDiff = ballRow - row;
+    const colDiff = ballCol - col;
+
+    // Only allow forward diagonal tackles (like chess pawn capture)
+    if (
+      rowDiff === (player.team === TEAM1 ? 1 : -1) &&
+      Math.abs(colDiff) === 1
+    ) {
+      moves.push([ballRow, ballCol]);
+    }
+  }
+
+  // Regular movement (1 square in any direction)
   for (
     let r = Math.max(0, row - 1);
     r <= Math.min(GRID_SIZE - 1, row + 1);
@@ -67,7 +86,7 @@ const calculateMoveSquares = (
       // Skip the current position
       if (r === row && c === col) continue;
 
-      // Skip occupied squares
+      // Skip occupied squares (except for tackle moves which are handled above)
       if (gameState.grid[r][c]) continue;
 
       // Check if this is a goalkeeper trying to leave goal area
@@ -118,21 +137,6 @@ const calculateMoveSquares = (
       }
 
       moves.push([r, c]);
-    }
-  }
-
-  // Add tackle moves if player is adjacent to opponent with ball
-  const [ballRow, ballCol] = gameState.ballPosition;
-  const ballOwner = gameState.grid[ballRow][ballCol];
-
-  if (ballOwner && ballOwner.team !== player.team) {
-    // Check if we can tackle diagonally
-    const rowDiff = ballRow - row;
-    const colDiff = ballCol - col;
-
-    // Diagonal tackle (like chess pawn capture)
-    if (Math.abs(rowDiff) === 1 && Math.abs(colDiff) === 1) {
-      moves.push([ballRow, ballCol]);
     }
   }
 
