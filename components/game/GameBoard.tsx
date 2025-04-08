@@ -7,9 +7,8 @@ import {
   isGoalArea,
   isDefenseBox,
 } from "@/app/utils/gameUtils";
-import { CSSProperties } from "react";
-import { motion, AnimatePresence, useAnimationControls } from "framer-motion";
-import React from "react";
+import { CSSProperties, useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface GameBoardProps {
   gameState: GameState;
@@ -26,51 +25,30 @@ export default function GameBoard({
   skippedPlayer,
   handleCellClick,
 }: GameBoardProps) {
-  const ballControls = useAnimationControls();
-  const prevBallPos = React.useRef(gameState.ballPosition);
-  const [ballOffset, setBallOffset] = React.useState({ x: 0, y: 0 });
+  const [prevBallPos, setPrevBallPos] = useState(gameState.ballPosition);
+  const [isThrowingBall, setIsThrowingBall] = useState(false);
 
-  React.useEffect(() => {
-    const [prevRow, prevCol] = prevBallPos.current;
-    const [newRow, newCol] = gameState.ballPosition;
-
-    // Only animate if the ball position has changed
-    if (prevRow !== newRow || prevCol !== newCol) {
-      // Calculate the distance and direction
-      const deltaX = (newCol - prevCol) * 55; // multiply by cell width
-      const deltaY = (newRow - prevRow) * 55; // multiply by cell height
-      const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-
-      // Animate the ball
-      const sequence = async () => {
-        // Reset position
-        await ballControls.start({
-          x: 0,
-          y: 0,
-          scale: 1,
-          transition: { duration: 0 },
-        });
-
-        // Animate to new position with arc
-        await ballControls.start({
-          x: deltaX,
-          y: [0, -40, deltaY], // Add vertical arc movement
-          scale: [1, 1.2, 1],
-          transition: {
-            duration: Math.min(1.8 + distance * 0.004, 3), // Much slower animation
-            times: [0, 0.5, 1], // Control timing of the arc
-            type: "keyframes",
-            ease: "easeInOut", // Smoother easing
-          },
-        });
-      };
-
-      sequence();
-
-      // Update the previous position after animation
-      prevBallPos.current = gameState.ballPosition;
+  useEffect(() => {
+    if (
+      prevBallPos[0] !== gameState.ballPosition[0] ||
+      prevBallPos[1] !== gameState.ballPosition[1]
+    ) {
+      setIsThrowingBall(true);
+      const timer = setTimeout(() => {
+        setIsThrowingBall(false);
+        setPrevBallPos(gameState.ballPosition);
+      }, 350); // Match the animation duration
+      return () => clearTimeout(timer);
     }
-  }, [gameState.ballPosition, ballControls]);
+  }, [gameState.ballPosition, prevBallPos]);
+
+  const getBallPosition = (row: number, col: number) => {
+    const cellSize = 55; // This should match your cell size
+    return {
+      x: col * cellSize,
+      y: row * cellSize,
+    };
+  };
 
   const hasBall = (row: number, col: number) => {
     return (
@@ -179,7 +157,42 @@ export default function GameBoard({
   };
 
   return (
-    <div className="grid grid-cols-10 gap-0 p-0.5 bg-black overflow-hidden rounded">
+    <div className="grid grid-cols-10 gap-0 p-0.5 bg-black overflow-hidden rounded relative">
+      {/* Add the flying ball animation */}
+      <AnimatePresence>
+        {isThrowingBall && (
+          <motion.div
+            className="absolute w-5 h-5 rounded-full z-20 shadow-md"
+            initial={{
+              ...getBallPosition(prevBallPos[0], prevBallPos[1]),
+              scale: 1,
+            }}
+            animate={{
+              ...getBallPosition(
+                gameState.ballPosition[0],
+                gameState.ballPosition[1]
+              ),
+              scale: 1,
+              transition: {
+                duration: 0.35, // Faster duration
+                ease: [0.25, 0.5, 0.35, 1], // Smoother easing curve
+                y: {
+                  type: "spring",
+                  stiffness: 150,
+                  damping: 12,
+                  velocity: -200,
+                },
+              },
+            }}
+            style={{
+              background: `radial-gradient(circle at 30% 30%, white 0%, white 50%, #333 51%, #333 60%, white 61%, white 100%)`,
+              border: "1px solid #666",
+              boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+            }}
+          />
+        )}
+      </AnimatePresence>
+
       {Array(10)
         .fill(null)
         .map((_, row) =>
@@ -255,18 +268,22 @@ export default function GameBoard({
                         {cell.isGoalkeeper ? "GK" : "P"}
                       </motion.div>
                     )}
-                    {hasBallHere && (
+                    {hasBallHere && !isThrowingBall && (
                       <motion.div
-                        className="absolute w-5 h-5 rounded-full z-20 shadow-md"
-                        animate={ballControls}
-                        initial={false}
+                        className="absolute top-0 right-0 w-5 h-5 rounded-full z-10 shadow-md"
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{
+                          type: "spring",
+                          stiffness: 400,
+                          damping: 25,
+                        }}
+                        layout
                         style={{
-                          position: "absolute",
-                          top: "0px",
-                          right: "0px",
                           background: `radial-gradient(circle at 30% 30%, white 0%, white 50%, #333 51%, #333 60%, white 61%, white 100%)`,
                           border: "1px solid #666",
-                          boxShadow: "0 2px 4px rgba(0,0,0,0.3)",
+                          transform: "translate(-2px, 2px)",
+                          boxShadow: "0 1px 2px rgba(0,0,0,0.3)",
                         }}
                       />
                     )}
