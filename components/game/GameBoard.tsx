@@ -8,6 +8,8 @@ import {
   isDefenseBox,
 } from "@/app/utils/gameUtils";
 import { CSSProperties } from "react";
+import { motion, AnimatePresence, useAnimationControls } from "framer-motion";
+import React from "react";
 
 interface GameBoardProps {
   gameState: GameState;
@@ -24,6 +26,52 @@ export default function GameBoard({
   skippedPlayer,
   handleCellClick,
 }: GameBoardProps) {
+  const ballControls = useAnimationControls();
+  const prevBallPos = React.useRef(gameState.ballPosition);
+  const [ballOffset, setBallOffset] = React.useState({ x: 0, y: 0 });
+
+  React.useEffect(() => {
+    const [prevRow, prevCol] = prevBallPos.current;
+    const [newRow, newCol] = gameState.ballPosition;
+
+    // Only animate if the ball position has changed
+    if (prevRow !== newRow || prevCol !== newCol) {
+      // Calculate the distance and direction
+      const deltaX = (newCol - prevCol) * 55; // multiply by cell width
+      const deltaY = (newRow - prevRow) * 55; // multiply by cell height
+      const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+
+      // Animate the ball
+      const sequence = async () => {
+        // Reset position
+        await ballControls.start({
+          x: 0,
+          y: 0,
+          scale: 1,
+          transition: { duration: 0 },
+        });
+
+        // Animate to new position with arc
+        await ballControls.start({
+          x: deltaX,
+          y: [0, -40, deltaY], // Add vertical arc movement
+          scale: [1, 1.2, 1],
+          transition: {
+            duration: Math.min(1.8 + distance * 0.004, 3), // Much slower animation
+            times: [0, 0.5, 1], // Control timing of the arc
+            type: "keyframes",
+            ease: "easeInOut", // Smoother easing
+          },
+        });
+      };
+
+      sequence();
+
+      // Update the previous position after animation
+      prevBallPos.current = gameState.ballPosition;
+    }
+  }, [gameState.ballPosition, ballControls]);
+
   const hasBall = (row: number, col: number) => {
     return (
       gameState.ballPosition[0] === row && gameState.ballPosition[1] === col
@@ -156,51 +204,83 @@ export default function GameBoard({
                   `}
                   onClick={() => handleCellClick(row, col)}
                 >
-                  {isValidMoveSquare && (
-                    <div className="absolute inset-0 bg-yellow-400 bg-opacity-25 z-5 pointer-events-none"></div>
-                  )}
-                  {cell && (
-                    <div
-                      className={`rounded-full w-12 h-12 flex items-center justify-center text-white text-sm font-bold z-10`}
-                      style={{
-                        backgroundColor:
-                          cell.team === "Barcelona"
-                            ? cell.isGoalkeeper
-                              ? "transparent"
-                              : "transparent"
-                            : cell.isGoalkeeper
-                            ? "#FFEB3B"
-                            : "#FFFFFF",
-                        color:
-                          cell.team === "Barcelona"
-                            ? "white"
-                            : cell.isGoalkeeper
-                            ? "black"
-                            : "black",
-                        background:
-                          cell.team === "Barcelona"
-                            ? cell.isGoalkeeper
-                              ? "linear-gradient(90deg, #2E7D32 25%, #1B5E20 25%, #1B5E20 50%, #2E7D32 50%, #2E7D32 75%, #1B5E20 75%, #1B5E20 100%)"
-                              : "linear-gradient(90deg, #A50044 25%, #004D98 25%, #004D98 50%, #A50044 50%, #A50044 75%, #004D98 75%, #004D98 100%)"
-                            : cell.isGoalkeeper
-                            ? "#FFEB3B"
-                            : "#FFFFFF",
-                        backgroundSize:
-                          cell.team === "Barcelona" ? "8px 100%" : "auto",
-                        border: "1px solid black",
-                      }}
-                    >
-                      {cell.isGoalkeeper ? "GK" : "P"}
-                    </div>
-                  )}
-                  {hasBallHere && (
-                    <div className="absolute top-0 right-0 w-4 h-4 bg-yellow-400 rounded-full border border-black z-10"></div>
-                  )}
-                  {skippedPlayer &&
-                    skippedPlayer[0] === row &&
-                    skippedPlayer[1] === col && (
-                      <div className="absolute bottom-0 right-0 w-4 h-4 bg-red-500 rounded-full z-10"></div>
+                  <AnimatePresence>
+                    {isValidMoveSquare && (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="absolute inset-0 bg-yellow-400 bg-opacity-25 z-5 pointer-events-none"
+                      />
                     )}
+                    {cell && (
+                      <motion.div
+                        className={`rounded-full w-12 h-12 flex items-center justify-center text-white text-sm font-bold z-10`}
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{
+                          type: "spring",
+                          stiffness: 300,
+                          damping: 20,
+                        }}
+                        layout
+                        style={{
+                          backgroundColor:
+                            cell.team === "Barcelona"
+                              ? cell.isGoalkeeper
+                                ? "transparent"
+                                : "transparent"
+                              : cell.isGoalkeeper
+                              ? "#FFEB3B"
+                              : "#FFFFFF",
+                          color:
+                            cell.team === "Barcelona"
+                              ? "white"
+                              : cell.isGoalkeeper
+                              ? "black"
+                              : "black",
+                          background:
+                            cell.team === "Barcelona"
+                              ? cell.isGoalkeeper
+                                ? "linear-gradient(90deg, #2E7D32 25%, #1B5E20 25%, #1B5E20 50%, #2E7D32 50%, #2E7D32 75%, #1B5E20 75%, #1B5E20 100%)"
+                                : "linear-gradient(90deg, #A50044 25%, #004D98 25%, #004D98 50%, #A50044 50%, #A50044 75%, #004D98 75%, #004D98 100%)"
+                              : cell.isGoalkeeper
+                              ? "#FFEB3B"
+                              : "#FFFFFF",
+                          backgroundSize:
+                            cell.team === "Barcelona" ? "8px 100%" : "auto",
+                          border: "1px solid black",
+                        }}
+                      >
+                        {cell.isGoalkeeper ? "GK" : "P"}
+                      </motion.div>
+                    )}
+                    {hasBallHere && (
+                      <motion.div
+                        className="absolute w-5 h-5 rounded-full z-20 shadow-md"
+                        animate={ballControls}
+                        initial={false}
+                        style={{
+                          position: "absolute",
+                          top: "0px",
+                          right: "0px",
+                          background: `radial-gradient(circle at 30% 30%, white 0%, white 50%, #333 51%, #333 60%, white 61%, white 100%)`,
+                          border: "1px solid #666",
+                          boxShadow: "0 2px 4px rgba(0,0,0,0.3)",
+                        }}
+                      />
+                    )}
+                    {skippedPlayer &&
+                      skippedPlayer[0] === row &&
+                      skippedPlayer[1] === col && (
+                        <motion.div
+                          initial={{ scale: 0, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          exit={{ scale: 0, opacity: 0 }}
+                          className="absolute bottom-0 right-0 w-4 h-4 bg-red-500 rounded-full z-10"
+                        />
+                      )}
+                  </AnimatePresence>
                 </div>
               );
             })
